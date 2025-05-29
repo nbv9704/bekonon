@@ -1,7 +1,22 @@
 const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
 const mongoose = require('mongoose');
+const express = require('express'); // Thêm express
 require('dotenv').config();
 const registerCommands = require('./register');
+
+// Khởi tạo HTTP server
+const app = express();
+const PORT = process.env.PORT || 8080; // Render yêu cầu cổng, mặc định là 8080
+
+// Route đơn giản để Render kiểm tra
+app.get('/', (req, res) => {
+  res.status(200).send('Bot is running!');
+});
+
+// Mở cổng HTTP
+app.listen(PORT, () => {
+  console.log(`HTTP server running on port ${PORT}`);
+});
 
 const client = new Client({
   intents: [
@@ -74,7 +89,12 @@ client.once('ready', async () => {
     status: 'idle',
   });
 
-  await registerCommands(client);
+  try {
+    await registerCommands(client);
+    console.log('Commands registered successfully');
+  } catch (error) {
+    console.error('Error registering commands:', error.stack);
+  }
 });
 
 client.on('interactionCreate', async interaction => {
