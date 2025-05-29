@@ -82,9 +82,9 @@ client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
   client.user.setPresence({
     activities: [{ 
-      name: 'playing with code', 
+      name: 'ur basement', 
       type: ActivityType.Streaming, 
-      url: 'https://www.facebook.com/groups/sportsbook3vn' 
+      url: '' 
     }],
     status: 'idle',
   });
