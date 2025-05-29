@@ -84,7 +84,7 @@ client.once('ready', async () => {
     activities: [{ 
       name: 'ur basement', 
       type: ActivityType.Streaming, 
-      url: '' 
+      url: 'https://youtu.be/dQw4w9WgXcQ?si=dHCW5hGhxwrlLGX9' 
     }],
     status: 'idle',
   });
