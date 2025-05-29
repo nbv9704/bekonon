@@ -1,12 +1,12 @@
 const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
 const mongoose = require('mongoose');
-const express = require('express');
+const express = require('express'); // Thêm express
 require('dotenv').config();
 const registerCommands = require('./register');
 
 // Khởi tạo HTTP server
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8080; // Render yêu cầu cổng, mặc định là 8080
 
 // Route đơn giản để Render kiểm tra
 app.get('/', (req, res) => {
@@ -103,47 +103,47 @@ client.on('interactionCreate', async interaction => {
   try {
     if (interaction.isCommand()) {
       const command = require(`./commands/${interaction.commandName}`);
-      // Xóa log: console.log(`Executing command: ${interaction.commandName} by ${interaction.user.tag} in guild ${interaction.guild?.name || 'DM'}`);
+      console.log(`Executing command: ${interaction.commandName} by ${interaction.user.tag} in guild ${interaction.guild?.name || 'DM'}`);
       await command.execute(interaction, interaction.commandName === 'trade' ? tradeStates : collectionStates);
     } else if (interaction.isButton()) {
       const messageId = interaction.message.id;
-      // Xóa log: console.log(`Button interaction: ${interaction.customId} on messageId ${messageId} by ${interaction.user.tag} in guild ${interaction.guild?.name || 'DM'}`);
+      console.log(`Button interaction: ${interaction.customId} on messageId ${messageId} by ${interaction.user.tag} in guild ${interaction.guild?.name || 'DM'}`);
 
       if (interaction.customId.startsWith('grab_')) {
-        // Xóa log: console.log(`Processing grab button for messageId ${messageId}`);
+        console.log(`Processing grab button for messageId ${messageId}`);
         await grab.execute(interaction, collectionStates);
         return;
       }
 
       if (interaction.customId.startsWith('trade_')) {
-        // Xóa log: console.log(`Checking trade state for messageId ${messageId}`);
+        console.log(`Checking trade state for messageId ${messageId}`);
         const state = tradeStates.get(messageId);
         if (!state) {
-          // Xóa log: console.log(`Trade state not found for messageId ${messageId}`);
+          console.log(`Trade state not found for messageId ${messageId}`);
           await interaction.reply({ content: 'Trade session not found!', ephemeral: true });
         }
         return;
       }
 
       if (duel.duelStates && duel.duelStates.has(messageId)) {
-        // Xóa log: console.log(`Processing duel button for messageId ${messageId}`);
+        console.log(`Processing duel button for messageId ${messageId}`);
         await duel.handleButton(interaction);
         return;
       }
 
       const state = collectionStates.get(messageId);
       if (state) {
-        // Xóa log: console.log(`Found state in collectionStates for messageId ${messageId}:`, state);
+        console.log(`Found state in collectionStates for messageId ${messageId}:`, state);
         const commandName = state.commandName || 'collection';
         const commandHandler = require(`./commands/${commandName}`);
         if (commandHandler.handleButton) {
-          // Xóa log: console.log(`Calling handleButton for command ${commandName}`);
+          console.log(`Calling handleButton for command ${commandName}`);
           await commandHandler.handleButton(interaction, collectionStates);
         }
         return;
       }
 
-      // Xóa log: console.log(`No state found for button ${interaction.customId} on messageId ${messageId}`);
+      console.log(`No state found for button ${interaction.customId} on messageId ${messageId}`);
       await interaction.reply({ content: 'Unknown button action!', ephemeral: true });
     }
   } catch (error) {
