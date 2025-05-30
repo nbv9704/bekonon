@@ -31,6 +31,22 @@ const client = new Client({
 const collectionStates = new Map();
 const tradeStates = new Map();
 
+// Require file lệnh với try...catch
+let duel, grab;
+try {
+  duel = require('./commands/duel');
+  console.log('Successfully loaded commands/duel.js');
+} catch (error) {
+  console.error('Error loading commands/duel.js:', error.stack);
+}
+
+try {
+  grab = require('./commands/grab');
+  console.log('Successfully loaded commands/grab.js');
+} catch (error) {
+  console.error('Error loading commands/grab.js:', error.stack);
+}
+
 // Kết nối MongoDB
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bekonon';
 mongoose.connect(mongoURI, {
