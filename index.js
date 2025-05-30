@@ -1,7 +1,6 @@
 const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
 const mongoose = require('mongoose');
 const express = require('express');
-const { setTimeout } = require('timers/promises');
 require('dotenv').config();
 const registerCommands = require('./register');
 
@@ -30,22 +29,8 @@ const client = new Client({
 
 const collectionStates = new Map();
 const tradeStates = new Map();
-
-// Require file lệnh với try...catch
-let duel, grab;
-try {
-  duel = require('./commands/duel');
-  console.log('Successfully loaded commands/duel.js');
-} catch (error) {
-  console.error('Error loading commands/duel.js:', error.stack);
-}
-
-try {
-  grab = require('./commands/grab');
-  console.log('Successfully loaded commands/grab.js');
-} catch (error) {
-  console.error('Error loading commands/grab.js:', error.stack);
-}
+const duel = require('./commands/duel');
+const grab = require('./commands/grab');
 
 // Kết nối MongoDB
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bekonon';
@@ -55,63 +40,43 @@ mongoose.connect(mongoURI, {
 })
   .then(async () => {
     console.log('Connected to MongoDB');
-    try {
-      const { Card } = require('./models');
-      console.log('Counting documents in Card collection...');
-      const cardCount = await Promise.race([
-        Card.countDocuments(),
-        setTimeout(30000).then(() => { throw new Error('Timeout: Failed to count documents in Card collection after 30 seconds'); }),
-      ]);
-      console.log(`Found ${cardCount} cards in database`);
-      if (cardCount === 0) {
-        const initialCards = [
-          { 
-            character: "Bimajo", 
-            rarity: "◈C", 
-            imageUrl: "https://i.imgur.com/0qY1z8u.png",
-            number: 1,
-            element: "Fire",
-            origin: "Fantasy",
-            cardId: "bimajo-001"
-          },
-          { 
-            character: "Jane Elves", 
-            rarity: "◈R", 
-            imageUrl: "https://i.imgur.com/3kX7z9v.png",
-            number: 2,
-            element: "Earth",
-            origin: "Elven",
-            cardId: "janeelves-002"
-          },
-          { 
-            character: "Ru-chan", 
-            rarity: "◈E", 
-            imageUrl: "https://i.imgur.com/7nZ3x4p.png",
-            number: 3,
-            element: "Water",
-            origin: "Anime",
-            cardId: "ruchan-003"
-          },
-        ];
-        console.log('Inserting initial cards...');
-        await Promise.race([
-          Card.insertMany(initialCards),
-          setTimeout(30000).then(() => { throw new Error('Timeout: Failed to insert initial cards after 30 seconds'); }),
-        ]);
-        console.log('Added initial cards:', initialCards);
-      }
-    } catch (error) {
-      console.error('Error initializing MongoDB data:', error.stack);
+    const { Card } = require('./models');
+    const cardCount = await Card.countDocuments();
+    if (cardCount === 0) {
+      const initialCards = [
+        { 
+          character: "Bimajo", 
+          rarity: "◈C", 
+          imageUrl: "https://i.imgur.com/0qY1z8u.png",
+          number: 1,
+          element: "Fire",
+          origin: "Fantasy",
+          cardId: "bimajo-001"
+        },
+        { 
+          character: "Jane Elves", 
+          rarity: "◈R", 
+          imageUrl: "https://i.imgur.com/3kX7z9v.png",
+          number: 2,
+          element: "Earth",
+          origin: "Elven",
+          cardId: "janeelves-002"
+        },
+        { 
+          character: "Ru-chan", 
+          rarity: "◈E", 
+          imageUrl: "https://i.imgur.com/7nZ3x4p.png",
+          number: 3,
+          element: "Water",
+          origin: "Anime",
+          cardId: "ruchan-003"
+        },
+      ];
+      await Card.insertMany(initialCards);
+      console.log('Added initial cards:', initialCards);
     }
-    console.log('Continuing bot startup after MongoDB initialization...');
   })
   .catch(err => console.error('MongoDB connection error:', err.stack));
-
-// Thêm log để kiểm tra Discord token và đăng nhập
-console.log('Attempting to login to Discord with token...');
-client.login(process.env.DISCORD_TOKEN)
-  .then(() => console.log('Discord login successful'))
-  .catch(err => console.error('Failed to login to Discord:', err.stack));
 
 client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
@@ -138,38 +103,47 @@ client.on('interactionCreate', async interaction => {
   try {
     if (interaction.isCommand()) {
       const command = require(`./commands/${interaction.commandName}`);
+      // Xóa log: console.log(`Executing command: ${interaction.commandName} by ${interaction.user.tag} in guild ${interaction.guild?.name || 'DM'}`);
       await command.execute(interaction, interaction.commandName === 'trade' ? tradeStates : collectionStates);
     } else if (interaction.isButton()) {
       const messageId = interaction.message.id;
+      // Xóa log: console.log(`Button interaction: ${interaction.customId} on messageId ${messageId} by ${interaction.user.tag} in guild ${interaction.guild?.name || 'DM'}`);
 
       if (interaction.customId.startsWith('grab_')) {
+        // Xóa log: console.log(`Processing grab button for messageId ${messageId}`);
         await grab.execute(interaction, collectionStates);
         return;
       }
 
       if (interaction.customId.startsWith('trade_')) {
+        // Xóa log: console.log(`Checking trade state for messageId ${messageId}`);
         const state = tradeStates.get(messageId);
         if (!state) {
+          // Xóa log: console.log(`Trade state not found for messageId ${messageId}`);
           await interaction.reply({ content: 'Trade session not found!', ephemeral: true });
         }
         return;
       }
 
-      if (duel && duel.duelStates && duel.duelStates.has(messageId)) {
+      if (duel.duelStates && duel.duelStates.has(messageId)) {
+        // Xóa log: console.log(`Processing duel button for messageId ${messageId}`);
         await duel.handleButton(interaction);
         return;
       }
 
       const state = collectionStates.get(messageId);
       if (state) {
+        // Xóa log: console.log(`Found state in collectionStates for messageId ${messageId}:`, state);
         const commandName = state.commandName || 'collection';
         const commandHandler = require(`./commands/${commandName}`);
         if (commandHandler.handleButton) {
+          // Xóa log: console.log(`Calling handleButton for command ${commandName}`);
           await commandHandler.handleButton(interaction, collectionStates);
         }
         return;
       }
 
+      // Xóa log: console.log(`No state found for button ${interaction.customId} on messageId ${messageId}`);
       await interaction.reply({ content: 'Unknown button action!', ephemeral: true });
     }
   } catch (error) {
@@ -181,3 +155,5 @@ client.on('interactionCreate', async interaction => {
     }
   }
 });
+
+client.login(process.env.DISCORD_TOKEN); 
